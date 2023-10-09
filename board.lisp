@@ -46,10 +46,12 @@
   (terpri)
   (PrintBoard board 19))
 
-(defun CheckIfPieceWithInBoard(board row column)
+(defun CheckIfPieceWithInBoard( row column)
   (cond
-  ((or (< row 0) (> row 19)) nil)
-  ((or (< column 0) (> column 19)) nil)
+  ((or (< row 0) (> row 18)) nil)
+  ((or (< column 0) (> column 18
+  )) nil)
+  (t t)
   )
 )
 (defun CheckIfPieceValid(colour)
@@ -137,6 +139,6 @@
 
 (defun IsSecondPositionValid (board row column)
   (cond
-    ( (CheckIfPieceWithInBoard board row column) nil)
+    ( (CheckIfPieceWithInBoard row column) nil)
     ((and (>= row 6) (<= row 12) (>= column 6) (<= column 12)) nil)
     (t t)))
