@@ -1,0 +1,47 @@
+(defun GetElementFromPlayer(player index counter)
+    (cond
+        ((= counter index)(first player))
+        (t 
+            (GetElementFromPlayer (rest player) index (+ counter 1))
+        )
+    )
+)
+
+(defun GetPlayerColour(player)
+    (GetElementFromPlayer player 0 0)
+
+)
+(defun GetPlayerPoints(player)
+    (GetElementFromPlayer player 1 0)
+)
+(defun GetPlayerRoundPoints(player)
+    (GetElementFromPlayer player 2 0)
+)
+(defun GetPlayerCapturePoints(player)
+    (GetElementFromPlayer player 3 0)
+)
+(defun GetPlayerTotalMove(player)
+    (GetElementFromPlayer player 4 0)
+)
+(defun IncreaseTotalPoint (player point)
+  (let ((newMove (+ (GetPlayerTotalMove player) point)))
+    (IncreaseInPosition player newMove 1 0))
+)
+
+(defun IncreaseRoundPoint (player roundPoint)
+  (let ((newMove (+ (GetPlayerTotalMove player) roundPoint)))
+    (IncreaseInPosition player newMove 2 0))
+)
+(defun IncreaseCapturePoint (player capturePoint)
+  (let ((newMove (+ (GetPlayerTotalMove player) capturePoint)))
+    (IncreaseInPosition player newMove 3 0))
+)
+(defun IncreaseMove (player)
+  (let ((newMove (+ (GetPlayerTotalMove player) 1)))
+    (IncreaseInPosition player newMove 4 0)))
+
+(defun IncreaseInPosition (player point index counter)
+  (cond
+    ((= counter index) (cons point (rest player)))
+    (t 
+     (cons (first player) (IncreaseInPosition (rest player) point index (+ counter 1))))))
