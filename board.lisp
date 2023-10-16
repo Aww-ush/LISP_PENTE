@@ -1,3 +1,5 @@
+;(load "/Users/aayushshrestha/Desktop/LispProject/Strategy.lisp")
+
 (defun CreateRow (n)
   (cond 
     ((= n 0) nil)
@@ -11,17 +13,7 @@
 (defun GetEmptyBoard ()
   (CreateBoardRow 19))
 
-(defun PrintBoard (board n)
-  (cond
-    ((null board) nil)
-    (t
-     (princ n)
-     (cond 
-       ((< n 10) (princ "  "))
-       (t (princ " ")))
-     (PrintRow (first board))
-     (terpri) ; Move to the next line for the next row
-     (PrintBoard (rest board) (- n 1)))))
+
 
 (defun PrintRow (row)
   (cond
@@ -39,6 +31,17 @@
      (princ " ")
      (PrintColumnIndex (- n 1)))))
 
+(defun PrintBoard (board n)
+  (cond
+    ((null board) nil)
+    (t
+     (princ n)
+     (cond 
+       ((< n 10) (princ "  "))
+       (t (princ " ")))
+     (PrintRow (first board))
+     (terpri) ; Move to the next line for the next row
+     (PrintBoard (rest board) (- n 1)))))
 
 (defun PrintBoardWithIndex(board)
   (princ "   ")
@@ -49,8 +52,7 @@
 (defun CheckIfPieceWithInBoard( row column)
   (cond
   ((or (< row 0) (> row 18)) nil)
-  ((or (< column 0) (> column 18
-  )) nil)
+  ((or (< column 0) (> column 18)) nil)
   (t t)
   )
 )
@@ -62,32 +64,30 @@
 )
 
 
-(defun InsertColumn (row column color)
+(defun InsertColumn (row column colour)
   (cond
     ((= column 0)
-     (cons color (rest row)))
-    (t (cons (car row) (InsertColumn (rest row) (- column 1) color)))))
+     (cons colour (rest row)))
+    (t (cons (first row) (InsertColumn (rest row) (- column 1) colour)))))
 
-(defun InsertRow (board row column color)
+(defun InsertRow (board row column colour)
   (cond
     ((= row 0)
-     (cons (InsertColumn (car board) column color) (rest board)))
-    (t (cons (car board) (InsertRow (rest board) (- row 1) column color)))))
-
-(defun InsertPiece (board row column color)
-  (cond
-    ((or (< row 0) (> row 19) (< column 0) (> column 19))
-     (format t "Invalid row or column."))
-    (t (InsertRow board row column color))))
+     (cons (InsertColumn (first board) column colour) (rest board)))
+    (t (cons (first board) (InsertRow (rest board) (- row 1) column colour)))))
 
 
-(defun ChangeToRowColumn (position)
-  (let ((row (ConvertAlphaToRow (subseq position 1)))
-        (column (ConvertAlphaToColumn (char position 0))))
+(defun ConvertAlphaToColumn (alphaColumn)
+  (let ((column (- (char-code (char (string alphaColumn) 0)) (char-code #\A)))) ; Fixed char usage here
     (cond
-      ((and row column) (cons row column))
-      (t nil))))
-
+      ((< column 0)
+       (print "The column position is too small")
+       nil)
+      ((> column 19)
+       (print "The column position is too large")
+       nil)
+      (t
+       column))))
 
 (defun ConvertAlphaToRow (alphaRow)
   (let ((row (parse-integer (string alphaRow))))
@@ -103,18 +103,15 @@
        nil)
       (t
        (- 19 row)))))
-
-(defun ConvertAlphaToColumn (alphaColumn)
-  (let ((column (- (char-code (char (string alphaColumn) 0)) (char-code #\A)))) ; Fixed char usage here
+(defun ChangeToRowColumn (position)
+  (let ((row (ConvertAlphaToRow (subseq position 1)))
+        (column (ConvertAlphaToColumn (char position 0))))
     (cond
-      ((< column 0)
-       (print "The column position is too small")
-       nil)
-      ((> column 19)
-       (print "The column position is too large")
-       nil)
-      (t
-       column))))
+      ((and row column) (cons row column))
+      (t nil))))
+
+
+
        
 (defun FindRowInBoard (n rows)
   (cond
@@ -139,6 +136,102 @@
 
 (defun IsSecondPositionValid (board row column)
   (cond
-    ( (CheckIfPieceWithInBoard row column) nil)
     ((and (>= row 6) (<= row 12) (>= column 6) (<= column 12)) nil)
     (t t)))
+(defun InsertPiece (board row column colour)
+  (cond
+    ((or (< row 0) (> row 19) (< column 0) (> column 19))
+     (format t "Invalid row or column."))
+    (t (InsertRow board row column colour))))
+
+
+;; (defun CalculatePointAndCapture(board row column colour)
+;;     (CountPoints row column colour board)
+;; )
+; returns total black and white pieces currently in the board
+(defun CalculateTotalMove (board humanColour computerColour totalHumanMove totalComputerMove rowCounter humanCaptureScore computerCaptureScore)
+  (cond
+    ((< rowCounter 19)
+     (let* ((result (CalculateTotalMovesColumn board humanColour computerColour totalHumanMove totalComputerMove rowCounter 0)))
+       (CalculateTotalMove board humanColour computerColour
+                          (first result) (second result) ; Separate human and computer move totals
+                          (+ rowCounter 1) humanCaptureScore computerCaptureScore))) ; No changes to capture scores
+    (t
+     (list (+ totalHumanMove (* computerCaptureScore 2)) (+ totalComputerMove (* humanCaptureScore 2)))
+    )
+  )
+)
+
+(defun CalculateTotalMovesColumn (board humanColour computerColour totalHumanMove totalComputerMove rowCounter columnCounter)
+  (cond
+    ((< columnCounter 19)
+     (let ((piece (GetPiece board rowCounter columnCounter)))
+       (cond
+         ((string= piece humanColour)
+          (CalculateTotalMovesColumn board humanColour computerColour
+                                     (+ totalHumanMove 1) totalComputerMove
+                                     rowCounter (+ columnCounter 1)))
+         ((string= piece computerColour)
+          (CalculateTotalMovesColumn board humanColour computerColour
+                                     totalHumanMove (+ totalComputerMove 1)
+                                     rowCounter (+ columnCounter 1)))
+         (t
+          (CalculateTotalMovesColumn board humanColour computerColour
+                                     totalHumanMove totalComputerMove
+                                     rowCounter (+ columnCounter 1)))
+         )))
+    (t
+     (list totalHumanMove totalComputerMove)) ; Explicitly creating a list
+    )
+  )
+
+(defun CalculateRoundPointsInLoadedGame(board humanColour computerColour)
+  (RoundPointCalculator board humanColour computerColour 0 0 0)
+)
+
+(defun RoundPointCalculator(board humanColour computerColour humanPoint computerPoint rowCounter)
+  (cond
+    ((< rowCounter 19)
+     (let* ((result (CalculateTotalRoundPointColumn board humanColour computerColour humanPoint computerPoint rowCounter 0)))
+       (RoundPointCalculator board humanColour computerColour
+                            (nth 0 result) (nth 1 result) ; Separate human and computer points
+                            (+ rowCounter 1)))
+    )
+    (t
+     (list humanPoint computerPoint)
+    )
+  )
+)
+
+(defun CalculateTotalRoundPointColumn(board humanColour computerColour humanPoint computerPoint rowCounter columnCounter)
+  (cond
+    ((< columnCounter 19)
+     (let ((piece (GetPiece board rowCounter columnCounter)))
+       (cond
+         ((string= piece humanColour)
+          (let ((newBoard (InsertPiece board rowCounter columnCounter "O")))
+            (CalculateTotalRoundPointColumn newBoard humanColour computerColour
+                                          (+ humanPoint (CountPoints rowCounter columnCounter humanColour newBoard))
+                                          computerPoint rowCounter (+ columnCounter 1))
+          )
+         )
+         ((string= piece computerColour)
+          (let ((newBoard (InsertPiece board rowCounter columnCounter "O")))
+            (CalculateTotalRoundPointColumn newBoard humanColour computerColour
+                                          humanPoint
+                                          (+ computerPoint (CountPoints rowCounter columnCounter computerColour newBoard))
+                                          rowCounter (+ columnCounter 1))
+          )
+         )
+         (t
+          (CalculateTotalRoundPointColumn board humanColour computerColour
+                                        humanPoint computerPoint rowCounter (+ columnCounter 1))
+         )
+       )
+     )
+    )
+    (t
+     (list humanPoint computerPoint)
+    )
+  )
+)

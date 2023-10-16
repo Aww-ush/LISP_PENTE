@@ -1,0 +1,11 @@
+oct 12
+- making the tournament and all the game logic
+- making the reading and writing of file
+
+oct 13 
+- continuing read and write - worked for 2 hours
+
+oct 14 4pm to 9 pm
+- initiliazing human and computer move
+- making stragety 
+- finishing game

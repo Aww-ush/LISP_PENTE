@@ -1,0 +1,29 @@
+(
+   (
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O W O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O W O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+     ( O O O O O O O O O O O O O O O O O O O )
+    )
+
+    3 6
+
+    0 2
+
+    Computer White
+)

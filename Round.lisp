@@ -1,29 +1,61 @@
 (load "/Users/aayushshrestha/Desktop/LispProject/board.lisp")
 (load "/Users/aayushshrestha/Desktop/LispProject/Player.lisp")
+(load "/Users/aayushshrestha/Desktop/LispProject/Strategy.lisp")
 ; human and player will be list that has following element (colour totalPoints Points Capture and TotalMoves)
-; this should return human and computer in a list
+; return currentBoard human computer nextPlayer and ifWon
 (defun PlayRound (human computer board nextPlayer)
   (PrintBoardStatus board human computer nextPlayer)
+  (print "Human")
+  (print human)
+  (print "Computer")
+  (print computer)
   (cond
     ((string= nextPlayer "H")
-      (let ((newBoardPlayer (MakeMove board human)))
+      (let ((BoardPlayerIfWinList (MakeMove board human (GetPlayerRoundPoints computer) nextPlayer)))
         (cond 
+            ((= (nth 2  BoardPlayerIfWinList) 1) (AnnounceWinner "H")(list board human computer nextPlayer 1))
             ((DoesUserWantToContinue)
-                (PlayRound (rest newBoardPlayer) computer (first newBoardPlayer) "C")
+                (PlayRound (first (rest BoardPlayerIfWinList)) computer (first BoardPlayerIfWinList) "C")
             )
-            (t nil)
+            (t (list board human computer nextPlayer 0))
         )
       ))
     (t 
-      (let ((newBoardPlayer (MakeMove board computer)))
-            (cond 
+      (let ((BoardPlayerIfWinList (MakeMove board computer (GetPlayerRoundPoints human) nextPlayer)))
+        (cond 
+            ((= (nth 2 BoardPlayerIfWinList) 1) (AnnounceWinner "C")(list board human computer nextPlayer 1))
             ((DoesUserWantToContinue)
-                (PlayRound human (rest newBoardPlayer)  (first newBoardPlayer) "H")   
+                (PlayRound human (first (rest BoardPlayerIfWinList)) (first BoardPlayerIfWinList) "H")
             )
-            (t nil)
+            (t (list board human computer nextPlayer 0))
         )
       ))
   )
+)
+(defun AnnounceWinner(playerType)
+    (cond
+        ((string= playerType "H")(print "Congratulation! You have won this round"))
+        (t (print "Oh no! You have lost this round"))
+    )
+)
+(defun PrintUserPosition (row column)
+  (let ((alpha-col (code-char (+ column (char-code #\A))))
+        (user-row (- 19 row)))
+    (princ alpha-col)
+    (princ user-row)
+  )
+)
+
+(defun UserWantToMovePosition (generatedPosition)
+  (princ "Do you want to move to this position: ")
+  (PrintUserPosition (nth 0 generatedPosition) (nth 1 generatedPosition))
+  (print "Please enter \"N\" for 'No' and \"Y\" for 'Yes': ")
+  (terpri)
+  (let ((input (string-upcase (read))))
+    (cond
+      ((string= input "Y") 1)
+      ((string= input "N") 0)
+      (t (UserWantToMovePosition generatedPosition))))
 )
 
 ; position contains eg A19 where A is the column and 19 is the row 
@@ -47,43 +79,80 @@
 ;;    6) Return the valid position as a list (row column).
 ;; Assistance Received: none
 ;; ********************************************************************* */
-(defun AskForPosition (board)
-  (princ "Please enter the position on the board where you want to move your piece (e.g., 'A1'): ")
+(defun AskForPosition (board player totalOpponentScore)
+  (princ "Please enter the position on the board where you want to move your piece (e.g., 'A1')? Or type help for help")
   (terpri)
   (let ((input (string-upcase (read))))
     (cond
-      ((< (length input) 2)
-       (print "The position is too short. Please enter both column and row.")
-       (terpri)
-       (AskForPosition board))
-      ((> (length input) 3)
-       (print "The position is too long. Please enter both column and row without spaces.")
-       (terpri)
-       (AskForPosition board))
-      (t
-       (let ((position (ChangeToRowColumn input)))
-        ; Local Variable: position, a list containing the row and column of the input position
-        (cond
-          ((not position)
-           (print "Invalid row or column.")
-           (terpri)
-           (AskForPosition board))
-          ((not (CheckIfPlaceEmpty board (first position) (rest position)))
-           (print "Piece already exists at this position.")
-           (terpri)
-           (AskForPosition board))
-          (t position)))))))
-
-(defun AskForSecondPosition(board)
-    (print "Since this is second position, please enter 3 intersection away from center!!")
-    (terpri)
-    (let ((position(AskForPosition board)))
-        (cond 
-            ((not (IsSecondPositionValid board (first position) (rest position)))(AskForSecondPosition board))
-            (t position)
+      ((string= input "HELP")
+       (cond
+            ((and (= (GetPlayerTotalMove player) 1) (string= (GetPlayerColour player) "W"))
+                (let ((generatedPosition (GenerateValidSecondPosition board))
+                    )
+                (cond
+                  ((= (UserWantToMovePosition generatedPosition) 1) generatedPosition)
+                  (t (AskForPosition board player totalOpponentScore)))
+                ) 
+            
+            )
+            (t 
+              (let ((generatedPosition (GetBestPosition board (GetPlayerRoundPoints player) (GetPlayerColour player) totalOpponentScore))
+                    )
+                (cond
+                  ((= (UserWantToMovePosition generatedPosition) 1) generatedPosition)
+                  (t (AskForPosition board player totalOpponentScore)))
+                ) 
+            )
         )
+       )
+      (t (cond
+         ((< (length input) 2)
+          (print "The position is too short. Please enter both column and row.")
+          (AskForPosition board player totalOpponentScore)
+         )
+         ((> (length input) 3)
+          (print "The position is too long. Please enter both column and row without spaces.")
+          (AskForPosition board player totalOpponentScore)
+          )
+         ((alpha-char-p (char (string input) 0))
+          (print "The column position is not valid; it must be an alphabet character.")
+          (AskForPosition board player totalOpponentScore)
+          )
+         (t
+            (let ((position (ChangeToRowColumn input)))
+              (cond
+                ((not position)
+                  (print "Invalid row or column.")
+                  (AskForPosition board player totalOpponentScore)
+                )
+                ((not (CheckIfPlaceEmpty board (first position) (rest position)))
+                (print "Piece already exists at this position.")
+                (AskForPosition board player totalOpponentScore))
+                (t (AskForPosition board player totalOpponentScore)))
+            )
+          )
+        )
+      )
     )
+  )
+
 )
+
+
+
+
+(defun AskForSecondPosition (board player totalOpponentScore)
+  (print "Since this is the second position, the piece must be placed 3 intersections away from the center!!")
+  (terpri)
+  (let ((position (AskForPosition board player totalOpponentScore)))
+       (cond
+         ((not (IsSecondPositionValid board (nth 0 position) (nth 1 position))) (AskForSecondPosition board player totalOpponentScore))
+         (t position))
+      )
+  )
+
+
+
 (defun DoesUserWantToContinue ()
   (princ "Do you want to continue? Please enter \"N\" for 'No' and \"Y\" for 'Yes': ")
   (terpri)
@@ -117,25 +186,59 @@
     (terpri)
     (princ "Next player: ")
     (cond
-        ((string= nextPlayer "H")( print "Human"))
-        (t (print "Computer"))
+        ((string= nextPlayer "H")( princ "Human ")(terpri))
+        (t (princ "Computer")(terpri))
     )
-    (terpri)
 
 )
-(defun MakeMove(board player)
+; return board player and if win
+(defun MakeMove(board player totalOpponentScore playerType)
   (cond
-    ((and (= (GetPlayerTotalMove player) 0) (string= (GetPlayerColour player) "W"))
-     (print "Since this is the first move of \"White\" placing the piece in the center")
-     (terpri)
-     (cons (InsertPiece board 9 9 (GetPlayerColour player))
-           (IncreaseMove player)
+      ((string= playerType "H")
+        (print "Human's Turn")
+        (cond
+        ((and (= (GetPlayerTotalMove player) 0) (string= (GetPlayerColour player) "W"))
+        (print "Since this is the first move of \"White\" placing the piece in the center")
+        (terpri)
+        (list (InsertPiece board 9 9 (GetPlayerColour player)) (IncreaseMove player) 0)
+        )
+        ((and (= (GetPlayerTotalMove player) 1) (string= (GetPlayerColour player) "W"))
+        (let ((position (AskForSecondPosition board player totalOpponentScore)))
+
+          (GetNewBoardAndPointsAndCheckIfWin (nth 0 position) (nth 1 position) player board)
         ))
-    ((and (= (GetPlayerTotalMove player) 1) (string= (GetPlayerColour player) "W"))
-     (let ((position (AskForSecondPosition board)))
-       (cons (InsertPiece board (first position) (rest position) (GetPlayerColour player))
-             (IncreaseMove player))))
-    (t
-     (let ((position (AskForPosition board)))
-       (cons (InsertPiece board (first position) (rest position) (GetPlayerColour player))
-             (IncreaseMove player))))))
+        (t
+        (let ((position (AskForPosition board player totalOpponentScore)))
+          (GetNewBoardAndPointsAndCheckIfWin (nth 0 position) (nth 1 position) player board)
+                
+        ))))
+      (t 
+        (print "Computer's Turn")
+        (let ((position (GetBestPosition board (GetPlayerRoundPoints player) (GetPlayerColour player) totalOpponentScore)))
+                (princ "Computer is moving its piece to: ")
+                (PrintUserPosition (nth 0 position) (nth 1 position))
+                (terpri)
+               (GetNewBoardAndPointsAndCheckIfWin (nth 0 position) (nth 1 position) player board)
+
+        )
+      )
+    )
+    
+)
+;returns board updatedPlayer and ifWon
+(defun GetNewBoardAndPointsAndCheckIfWin(row column player board)
+  (let* ((newBoard (InsertPiece board row column (GetPlayerColour player)))
+         (totalPointsScored(CountPoints row column (GetPlayerColour player) newBoard))
+         (newPlayer (IncreaseRoundPoint player totalPointsScored))
+         (boardCapturePoint (CalculateTotalCapturePoint row column (GetPlayerColour newPlayer) newBoard 0 0))
+         (newPlayer1(IncreaseCapturePoint newPlayer (rest boardCapturePoint)))
+        )
+    (list (first boardCapturePoint) (IncreaseMove newPlayer1) (CheckIfWin newPlayer1 totalPointsScored))
+    ))
+
+(defun CheckIfWin(player recentScore)
+    (cond
+       ( (or(>= recentScore 5)(>= (GetPlayerCapturePoints player) 5)) 1)
+       (t 0)
+    )
+)
